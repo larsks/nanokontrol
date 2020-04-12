@@ -6,10 +6,10 @@ import logging
 import mido
 import pulsectl
 
-import scaler
-
 import evdev
 from evdev import ecodes
+
+from nanokontrol import scaler
 
 LOG = logging.getLogger(__name__)
 
