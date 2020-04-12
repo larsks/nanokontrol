@@ -110,15 +110,18 @@ def main(verbose, channel, midi_in_name, list_inputs):
         level=loglevel
     )
 
+    LOG.info('nanokontrol listening for messages on channel %d', channel)
+
     if list_inputs:
         input_names = mido.get_input_names()
         print('\n'.join(input_names))
         return
 
-    midi_in = mido.open_input()
+    midi_in = mido.open_input(midi_in_name)
     controller = Controller()
     m2p = scaler.Scaler(0, 127, 0, 1)
 
+    LOG.debug('start midi loop')
     for msg in midi_in:
         if msg.channel != channel:
             LOG.debug('ignoring message on channel %d: %s',
