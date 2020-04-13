@@ -161,5 +161,5 @@ DataDumpResponse = Struct(
     'num_of_msb'  / Byte,
     'num_of_lsb'  / Byte,
     'function_id' / Byte,
-    'dump'        / EncodedBytesAdapter(GreedyBytes),
+    'dump'        / EncodedBytesAdapter(Array(388, Byte)),
 )
