@@ -10,6 +10,7 @@ import evdev
 from evdev import ecodes
 
 from nanokontrol import scaler
+from nanokontrol.device import Nanokontrol
 
 LOG = logging.getLogger(__name__)
 
@@ -110,19 +111,18 @@ def main(verbose, channel, midi_in_name, list_inputs):
         level=loglevel
     )
 
-    LOG.info('nanokontrol listening for messages on channel %d', channel)
-
     if list_inputs:
         input_names = mido.get_input_names()
         print('\n'.join(input_names))
         return
 
-    midi_in = mido.open_input(midi_in_name)
+    nanokontrol = Nanokontrol(name=midi_in_name)
     controller = Controller()
     m2p = scaler.Scaler(0, 127, 0, 1)
 
-    LOG.debug('start midi loop')
-    for msg in midi_in:
+    LOG.info('nanokontrol listening for messages on channel %d', channel)
+
+    for msg in nanokontrol:
         if msg.channel != channel:
             LOG.debug('ignoring message on channel %d: %s',
                       msg.channel, msg)
