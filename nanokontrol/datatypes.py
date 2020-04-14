@@ -77,9 +77,10 @@ class EncodedBytesAdapter(Adapter):
 KorgMessage = Struct(
     'korg_exclusive'      / Const(b'\x42'),
     'global_midi_channel' / Byte,
-    'software_project'    / Array(4, Byte),
+    'software_project'    / Const(b'\x00\x01\x13\x00'),
     'format'              / Byte,
     'func_id_or_len'      / Byte,
+    'data'                / GreedyBytes,
 )
 
 DataDumpGroupParams = Struct(
@@ -156,10 +157,9 @@ DataDumpParams = Struct(
 )
 
 DataDumpResponse = Struct(
-    'header'      / KorgMessage,
-    'structure'   / Byte,
-    'num_of_msb'  / Byte,
-    'num_of_lsb'  / Byte,
-    'function_id' / Byte,
-    'dump'        / EncodedBytesAdapter(Array(388, Byte)),
+    'structure'    / Byte,
+    'num_data_msb' / Byte,
+    'num_data_lsb' / Byte,
+    'function_id'  / Byte,
+    'data'         / EncodedBytesAdapter(Array(388, Byte)),
 )
