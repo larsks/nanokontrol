@@ -9,8 +9,7 @@ class NoDeviceError(Exception):
 
 
 class Nanokontrol(object):
-
-    def __init__(self, name=None):
+    def __init__(self, name=None, midi_in_cb=None):
         if name is None:
             name = self.discover()
 
@@ -19,6 +18,9 @@ class Nanokontrol(object):
 
         self._in = mido.open_input(name)
         self._out = mido.open_output(name)
+
+        if midi_in_cb:
+            self._in.callback = midi_in_cb
 
     def discover(self):
         for name in mido.get_input_names():
