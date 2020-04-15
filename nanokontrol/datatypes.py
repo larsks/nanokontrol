@@ -1,12 +1,13 @@
 import more_itertools as mit
 
 from construct import (
-    Struct,
-    Const,
-    Byte,
-    Array,
-    GreedyBytes,
     Adapter,
+    Array,
+    Byte,
+    Computed,
+    Const,
+    GreedyBytes,
+    Struct,
     Terminated
 )
 
@@ -83,38 +84,37 @@ KorgMessage = Struct(
     'data'                / GreedyBytes,
 )
 
+DataDumpGroupControlVariable = Struct(
+    'type'           / Computed('variable'),
+    'assign_type'    / Byte,
+    'reserved1'      / Byte,
+    'control_number' / Byte,
+    'min_value'      / Byte,
+    'max_value'      / Byte,
+    'reserved2'      / Byte,
+)
+
+DataDumpGroupControlButton = Struct(
+    'type'           / Computed('button'),
+    'assign_type'    / Byte,
+    'behavior'       / Byte,
+    'control_number' / Byte,
+    'off_value'      / Byte,
+    'on_value'       / Byte,
+    'reserved1'      / Byte,
+)
+
+DataDumpGroupControls = Struct(
+    'slider' / DataDumpGroupControlVariable,
+    'knob'   / DataDumpGroupControlVariable,
+    'solo'   / DataDumpGroupControlButton,
+    'mute'   / DataDumpGroupControlButton,
+    'rec'    / DataDumpGroupControlButton,
+)
+
 DataDumpGroupParams = Struct(
-    'group_midi_channel'    / Byte,
-    'slider_assign_type'    / Byte,
-    'reserved1'             / Byte,
-    'slider_control_number' / Byte,
-    'slider_min_value'      / Byte,
-    'slider_max_value'      / Byte,
-    'reserved2'             / Byte,
-    'knob_assign_type'      / Byte,
-    'reserved3'             / Byte,
-    'knob_control_number'   / Byte,
-    'knob_min_value'        / Byte,
-    'knob_max_value'        / Byte,
-    'reserved4'             / Byte,
-    'solo_assign_type'      / Byte,
-    'solo_behavior'         / Byte,
-    'solo_control_number'   / Byte,
-    'solo_off_value'        / Byte,
-    'solo_on_value'         / Byte,
-    'reserved5'             / Byte,
-    'mute_assign_type'      / Byte,
-    'mute_behavior'         / Byte,
-    'mute_control_number'   / Byte,
-    'mute_off_value'        / Byte,
-    'mute_on_value'         / Byte,
-    'reserved6'             / Byte,
-    'rec_assign_type'       / Byte,
-    'rec_behavior'          / Byte,
-    'rec_control_number'    / Byte,
-    'rec_off_value'         / Byte,
-    'rec_on_value'          / Byte,
-    'reserved7'             / Byte,
+    'midi_channel'    / Byte,
+    'controls' / DataDumpGroupControls,
 )
 
 DataDumpCommonParams = Struct(
@@ -132,19 +132,23 @@ DataDumpTransportButtonParams = Struct(
     'reserved1'          / Byte,
 )
 
+DataDumpTransportControlParams = Struct(
+    'prev_track'      / DataDumpTransportButtonParams,
+    'next_track'      / DataDumpTransportButtonParams,
+    'cycle'           / DataDumpTransportButtonParams,
+    'market_set'      / DataDumpTransportButtonParams,
+    'prev_marker'     / DataDumpTransportButtonParams,
+    'next_marker'     / DataDumpTransportButtonParams,
+    'rew'             / DataDumpTransportButtonParams,
+    'ff'              / DataDumpTransportButtonParams,
+    'stop'            / DataDumpTransportButtonParams,
+    'play'            / DataDumpTransportButtonParams,
+    'rec'             / DataDumpTransportButtonParams,
+)
+
 DataDumpTransportParams = Struct(
-    'transport_midi_channel' / Byte,
-    'prev_track_params'      / DataDumpTransportButtonParams,
-    'next_track_params'      / DataDumpTransportButtonParams,
-    'cycle_params'           / DataDumpTransportButtonParams,
-    'market_set_params'      / DataDumpTransportButtonParams,
-    'prev_marker_params'     / DataDumpTransportButtonParams,
-    'next_marker_params'     / DataDumpTransportButtonParams,
-    'rew_params'             / DataDumpTransportButtonParams,
-    'ff_params'              / DataDumpTransportButtonParams,
-    'stop_params'            / DataDumpTransportButtonParams,
-    'play_params'            / DataDumpTransportButtonParams,
-    'rec_params'             / DataDumpTransportButtonParams,
+    'midi_channel' / Byte,
+    'controls'     / DataDumpTransportControlParams,
 )
 
 DataDumpParams = Struct(

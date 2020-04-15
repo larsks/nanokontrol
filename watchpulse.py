@@ -1,14 +1,13 @@
 #!/usr/bin/python
 
-import json
 import logging
 import mido
 import pulsectl
 import queue
 import time
 
-from nanokontrol import device
 from nanokontrol import datatypes
+from nanokontrol import device
 from nanokontrol import exc
 from nanokontrol import sysex
 
@@ -16,26 +15,13 @@ LOG = logging.getLogger(__name__)
 
 logging.basicConfig(level='DEBUG')
 
-transport_control_names = [
-    'prev_track',
-    'next_track',
-    'cycle',
-    'market_set',
-    'prev_marker',
-    'next_marker',
-    'rew',
-    'ff',
-    'stop',
-    'play',
-    'rec',
-]
-
 
 class ControlEvent(object):
-    def __init__(self, name, value):
-        self.name = name
+    def __init__(self, spec, value):
+        self.spec = spec
+        self.name = self.spec['name']
         self.value = value
-    
+
     def __str__(self):
         return '<Event {0.name}:{0.value}>'.format(self)
 
@@ -75,63 +61,60 @@ class Controller(object):
                 self.build_control_map(dump_params)
                 break
 
-    def build_control_map(self, params):
+    def build_control_map(self, scene):
         LOG.info('building control map')
         controls = {}
         messages = {}
 
-        for group in range(8):
-            p = params['group_parameters'][group]
-
+        group_params = scene.group_parameters
+        for groupnum, group in enumerate(group_params):
             channel = (
-                params.common_parameters.global_midi_channel
-                if p.group_midi_channel == 0x10
-                else p.group_midi_channel
+                scene.common_parameters.global_midi_channel
+                if group.midi_channel == 0x10
+                else group.midi_channel
             )
 
-            for control in ['slider', 'knob', 'solo', 'mute', 'rec']:
-                if control in ['solo', 'mute', 'rec']:
-                    control_type = 'button'
-                    led = True
-                else:
-                    control_type = 'variable'
-                    led = False
+            for control, params in group.controls.items():
+                if control.startswith('_'):
+                    continue
 
-                k = (channel, p['{}_control_number'.format(control)])
-                name = '{}-group-{}'.format(control, group)
+                k = (channel, params.control_number)
+                name = '{}-group-{}'.format(control, groupnum)
 
                 spec = {
                     'name': name,
                     'channel': k[0],
                     'control': k[1],
-                    'type': control_type,
-                    'led': led,
+                    'type': params.type,
+                    'led': params.type == 'button'
                 }
 
                 messages[k] = spec
                 controls[name] = spec
 
-            transport_params = params.transport_parameters
-            channel = (
-                params.common_parameters.global_midi_channel
-                if transport_params.transport_midi_channel == 0x10
-                else transport_params.transport_midi_channel
-            )
-            for control in transport_control_names:
-                info = transport_params['{}_params'.format(control)]
-                k = (channel, info.control_number)
-                name = 'transport-{}'.format(control)
+        transport_params = scene.transport_parameters
+        channel = (
+            scene.common_parameters.global_midi_channel
+            if transport_params.midi_channel == 0x10
+            else transport_params.midi_channel
+        )
+        for control, params in transport_params.controls.items():
+            if control.startswith('_'):
+                continue
 
-                spec = {
-                    'name': name,
-                    'channel': k[0],
-                    'control': k[1],
-                    'type': 'button',
-                    'led': False,
-                }
+            k = (channel, params.control_number)
+            name = 'transport-{}'.format(control)
 
-                messages[k] = spec
-                controls[name] = spec
+            spec = {
+                'name': name,
+                'channel': k[0],
+                'control': k[1],
+                'type': 'button',
+                'led': False,
+            }
+
+            messages[k] = spec
+            controls[name] = spec
 
         self.controls = controls
         self.messages = messages
@@ -183,10 +166,10 @@ class Controller(object):
         if evt.type == 'control_change':
             key = (evt.channel, evt.control)
             if key in self.messages:
-                event_name = self.messages[key]
+                spec = self.messages[key]
                 LOG.debug('channel %d control %d maps to %s',
-                          evt.channel, evt.control, event_name)
-                self.q.put(('control', ControlEvent(event_name, evt.value)))
+                          evt.channel, evt.control, spec)
+                self.q.put(('control', ControlEvent(spec, evt.value)))
 
     def pulse_ev_cb(self, event=None):
         '''Place a pulse event onto the queue and stop the
