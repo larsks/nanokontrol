@@ -2,9 +2,11 @@
 
 import click
 import dbus
+import json
 import logging
 import mido
 import pulsectl
+import sys
 
 import evdev
 from evdev import ecodes
@@ -95,13 +97,9 @@ class Controller(object):
 
         self.input.syn()
 
-
-@click.command()
+@click.group()
 @click.option('-v', '--verbose', count=True)
-@click.option('-c', '--channel', default=0, type=int)
-@click.option('-i', '--midi-in', 'midi_in_name')
-@click.option('-l', '--list-inputs', is_flag=True)
-def main(verbose, channel, midi_in_name, list_inputs):
+def main(verbose):
     try:
         loglevel = [logging.WARNING, logging.INFO, logging.DEBUG][verbose]
     except IndexError:
@@ -111,6 +109,23 @@ def main(verbose, channel, midi_in_name, list_inputs):
         level=loglevel
     )
 
+
+@main.command()
+@click.option('-o', '--output', 'output_file',
+              type=click.File('w'), default=sys.stdout)
+def controls(output_file):
+    n = Nanokontrol()
+    scene = n.get_current_config()
+    controls = n.build_control_map(scene)
+    with output_file:
+        json.dump(controls, output_file, indent=2)
+
+
+@main.command()
+@click.option('-c', '--channel', default=0, type=int)
+@click.option('-i', '--midi-in', 'midi_in_name')
+@click.option('-l', '--list-inputs', is_flag=True)
+def run(channel, midi_in_name, list_inputs):
     if list_inputs:
         input_names = mido.get_input_names()
         print('\n'.join(input_names))
