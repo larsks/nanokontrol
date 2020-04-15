@@ -9,17 +9,13 @@ from nanokontrol import sysex
 LOG = logging.getLogger(__name__)
 
 
-class NoDeviceError(Exception):
-    pass
-
-
 class Nanokontrol(object):
     def __init__(self, name=None, midi_in_cb=None):
         if name is None:
             name = self.discover()
 
         if name is None:
-            raise NoDeviceError()
+            raise exc.NoDeviceError()
 
         self._port = mido.open_ioport(name)
 
@@ -29,7 +25,7 @@ class Nanokontrol(object):
     def discover(self):
         for name in mido.get_ioport_names():
             if name.startswith('nanoKONTROL2'):
-                LOG.info('found device %s', name)
+                LOG.info('found port %s', name)
                 return name
 
     def send(self, msg, **kwargs):
@@ -43,7 +39,7 @@ class Nanokontrol(object):
 
     def get_current_config(self):
         for retries in range(5):
-            LOG.debug('sending current scene dump request')
+            LOG.info('sending current scene dump request')
             self.send(sysex.CurrentSceneRequest())
 
             for i in range(2000):
