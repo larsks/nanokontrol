@@ -59,7 +59,7 @@ class Nanokontrol(object):
                     LOG.info('received unknown sysex message: %s', msg)
                     continue
 
-        raise NoDeviceError()
+        raise exc.NoDeviceError()
 
     def build_control_map(self, scene):
         LOG.info('building control map')
